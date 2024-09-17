@@ -1,0 +1,9 @@
+{
+	"name": "demoDataFactoryak",
+	"location": "eastus",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "3ab53e66-62f5-4d48-b856-0990696838dc",
+		"tenantId": "a45fe71a-f480-4e42-ad5e-aff33165aa35"
+	}
+}

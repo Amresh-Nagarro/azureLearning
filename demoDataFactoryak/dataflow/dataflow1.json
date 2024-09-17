@@ -1,0 +1,181 @@
+{
+	"name": "dataflow1",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "MyCabCSV",
+						"type": "DatasetReference"
+					},
+					"name": "SourceMyCab01"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "RankCostPerKm",
+						"type": "DatasetReference"
+					},
+					"name": "sink1RankCostPerKm"
+				},
+				{
+					"dataset": {
+						"referenceName": "TripCountPerHour",
+						"type": "DatasetReference"
+					},
+					"name": "sink2TripCountPerHour"
+				},
+				{
+					"dataset": {
+						"referenceName": "TripDistancePerDay",
+						"type": "DatasetReference"
+					},
+					"name": "sink3TripDistancePerDay"
+				},
+				{
+					"dataset": {
+						"referenceName": "TipRatioPerPassenger",
+						"type": "DatasetReference"
+					},
+					"name": "sink4TipRatioPerPassenger"
+				}
+			],
+			"transformations": [
+				{
+					"name": "filterInvalidData"
+				},
+				{
+					"name": "filterJan2020CabData"
+				},
+				{
+					"name": "derivedColumnTipRatio"
+				},
+				{
+					"name": "aggregateGroupByPassengerCountAvgTipRatio"
+				},
+				{
+					"name": "derivedColumnPickupDatetimeMonthDay"
+				},
+				{
+					"name": "aggregateGroupByDayOfWeekCountTripDistnace"
+				},
+				{
+					"name": "aggregateGroupByHourCountTripDistance"
+				},
+				{
+					"name": "aggregateGroupByHourMeanTripCount"
+				},
+				{
+					"name": "derivedColumnCostPerKm"
+				},
+				{
+					"name": "sortBasedOnCostPerKm"
+				},
+				{
+					"name": "rankCostPerKm"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          VendorID as integer,",
+				"          pickup_datetime as string,",
+				"          dropoff_datetime as string,",
+				"          RatecodeID as integer,",
+				"          PickUp_LocationID as integer,",
+				"          DropOffLocationID as integer,",
+				"          passenger_count as integer,",
+				"          trip_distance as float,",
+				"          fare_amount as float,",
+				"          extra as float,",
+				"          mta_tax as float,",
+				"          tip_amount as float,",
+				"          tolls_amount as float,",
+				"          improvement_surcharge as float,",
+				"          total_amount as float,",
+				"          payment_type as integer,",
+				"          trip_type as integer,",
+				"          congestion_surcharge as float",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false,",
+				"     preferredIntegralType: 'integer',",
+				"     preferredFractionalType: 'float') ~> SourceMyCab01",
+				"SourceMyCab01 filter(toFloat(fare_amount) > 0.00 && toFloat(trip_distance) > 0.00 && (isNull(toFloat(passenger_count)) == false() && toFloat(passenger_count) > 0.00)) ~> filterInvalidData",
+				"filterInvalidData filter(between (toTimestamp(pickup_datetime, 'dd-MM-yy HH:mm'), toTimestamp('01-01-20 00:00', 'dd-MM-yy HH:mm'), toTimestamp('31-01-20 23:59', 'dd-MM-yy HH:mm'))) ~> filterJan2020CabData",
+				"filterJan2020CabData derive(tip_ratio = toFloat(tip_amount) / toFloat(fare_amount)) ~> derivedColumnTipRatio",
+				"derivedColumnTipRatio aggregate(groupBy(passenger_count),",
+				"     mean_tip_ratio = avg(toFloat(tip_ratio))) ~> aggregateGroupByPassengerCountAvgTipRatio",
+				"filterJan2020CabData derive(month = month(toDate(pickup_datetime, 'dd-MM-yy')),",
+				"          day = dayOfMonth(toDate(pickup_datetime, 'dd-MM-yy')),",
+				"     partitionBy('dynamicRange', 2,",
+				"          month(toDate(pickup_datetime,'dd-MM-yy')),",
+				"          dayOfMonth(toDate(pickup_datetime,'dd-MM-yy'))",
+				"     )) ~> derivedColumnPickupDatetimeMonthDay",
+				"derivedColumnPickupDatetimeMonthDay aggregate(groupBy(dayOfWeek = dayOfWeek(toDate(pickup_datetime,'yyyy-MM-dd'))),",
+				"     trip_distance_count = count(toFloat(trip_distance))) ~> aggregateGroupByDayOfWeekCountTripDistnace",
+				"derivedColumnPickupDatetimeMonthDay aggregate(groupBy(hour = hour(toTimestamp(pickup_datetime,'yy-MM-dd HH:mm'))),",
+				"     trip_count = count(toFloat(trip_distance))) ~> aggregateGroupByHourCountTripDistance",
+				"aggregateGroupByHourCountTripDistance aggregate(groupBy(hour),",
+				"     mean_trip_count = avg(trip_count)) ~> aggregateGroupByHourMeanTripCount",
+				"filterJan2020CabData derive(cost_per_km = toFloat(fare_amount)/toFloat(trip_distance)) ~> derivedColumnCostPerKm",
+				"derivedColumnCostPerKm sort(desc(cost_per_km, true)) ~> sortBasedOnCostPerKm",
+				"sortBasedOnCostPerKm rank(desc(cost_per_km, true),",
+				"     output(rank_cost_per_km as long),",
+				"     dense: true) ~> rankCostPerKm",
+				"rankCostPerKm sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          VendorID as string,",
+				"          pickup_datetime as string,",
+				"          dropoff_datetime as string,",
+				"          RatecodeID as string,",
+				"          PickUp_LocationID as string,",
+				"          DropOffLocationID as string,",
+				"          passenger_count as string,",
+				"          trip_distance as string,",
+				"          fare_amount as string,",
+				"          extra as string,",
+				"          mta_tax as string,",
+				"          tip_amount as string,",
+				"          tolls_amount as string,",
+				"          improvement_surcharge as string,",
+				"          total_amount as string,",
+				"          payment_type as string,",
+				"          trip_type as string,",
+				"          congestion_surcharge as string,",
+				"          cost_per_km as string,",
+				"          rank_cost_per_km as string",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> sink1RankCostPerKm",
+				"aggregateGroupByHourMeanTripCount sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          hour as string,",
+				"          mean_trip_count as string",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> sink2TripCountPerHour",
+				"aggregateGroupByDayOfWeekCountTripDistnace sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          dayOfWeek as string,",
+				"          trip_distance_count as string",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> sink3TripDistancePerDay",
+				"aggregateGroupByPassengerCountAvgTipRatio sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          passenger_count as string,",
+				"          mean_tip_ratio as string",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> sink4TipRatioPerPassenger"
+			]
+		}
+	}
+}
