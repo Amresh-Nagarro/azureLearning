@@ -1,0 +1,30 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "demoDataFactoryak"
+		},
+		"AzureBlobStorage1_connectionString": {
+			"value": ""
+		},
+		"AzureSqlDatabase1_password": {
+			"value": ""
+		},
+		"AzureSqlDatabase1_properties_typeProperties_server": {
+			"value": "demoserverak.database.windows.net"
+		},
+		"AzureSqlDatabase1_properties_typeProperties_database": {
+			"value": "demoLearning"
+		},
+		"AzureSqlDatabase1_properties_typeProperties_userName": {
+			"value": "admin_ak"
+		},
+		"AzureBlobStorage317_properties_privateLinkResourceId": {
+			"value": "/subscriptions/d5fa8dfe-8d0c-402b-b013-ce6dd9b66675/resourceGroups/Demo_Resources/providers/Microsoft.Storage/storageAccounts/demostorageaccountak"
+		},
+		"AzureBlobStorage317_properties_groupId": {
+			"value": "blob"
+		}
+	}
+}

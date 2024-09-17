@@ -1,0 +1,1272 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "demoDataFactoryak"
+		},
+		"AzureBlobStorage1_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'AzureBlobStorage1'"
+		},
+		"AzureSqlDatabase1_password": {
+			"type": "secureString",
+			"metadata": "Secure string for 'password' of 'AzureSqlDatabase1'"
+		},
+		"AzureBlobStorage317_properties_privateLinkResourceId": {
+			"type": "string",
+			"defaultValue": "/subscriptions/d5fa8dfe-8d0c-402b-b013-ce6dd9b66675/resourceGroups/Demo_Resources/providers/Microsoft.Storage/storageAccounts/demostorageaccountak"
+		},
+		"AzureBlobStorage317_properties_groupId": {
+			"type": "string",
+			"defaultValue": "blob"
+		},
+		"AzureSqlDatabase1_properties_typeProperties_server": {
+			"type": "string",
+			"defaultValue": "demoserverak.database.windows.net"
+		},
+		"AzureSqlDatabase1_properties_typeProperties_database": {
+			"type": "string",
+			"defaultValue": "demoLearning"
+		},
+		"AzureSqlDatabase1_properties_typeProperties_userName": {
+			"type": "string",
+			"defaultValue": "admin_ak"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/default')]",
+			"type": "Microsoft.DataFactory/factories/managedVirtualNetworks",
+			"apiVersion": "2018-06-01",
+			"properties": {},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AutoResolveIntegrationRuntime')]",
+			"type": "Microsoft.DataFactory/factories/integrationRuntimes",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "Managed",
+				"typeProperties": {
+					"computeProperties": {
+						"location": "AutoResolve",
+						"dataFlowProperties": {
+							"computeType": "General",
+							"coreCount": 8,
+							"timeToLive": 0
+						}
+					}
+				},
+				"managedVirtualNetwork": {
+					"type": "ManagedVirtualNetworkReference",
+					"referenceName": "default"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/managedVirtualNetworks/default')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/default/AzureBlobStorage317')]",
+			"type": "Microsoft.DataFactory/factories/managedVirtualNetworks/managedPrivateEndpoints",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"privateLinkResourceId": "[parameters('AzureBlobStorage317_properties_privateLinkResourceId')]",
+				"groupId": "[parameters('AzureBlobStorage317_properties_groupId')]"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/managedVirtualNetworks/default')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureBlobStorage1')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobStorage",
+				"typeProperties": {
+					"connectionString": "[parameters('AzureBlobStorage1_connectionString')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureSqlDatabase1')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureSqlDatabase",
+				"typeProperties": {
+					"server": "[parameters('AzureSqlDatabase1_properties_typeProperties_server')]",
+					"database": "[parameters('AzureSqlDatabase1_properties_typeProperties_database')]",
+					"encrypt": "optional",
+					"trustServerCertificate": true,
+					"authenticationType": "SQL",
+					"userName": "[parameters('AzureSqlDatabase1_properties_typeProperties_userName')]",
+					"password": {
+						"type": "SecureString",
+						"value": "[parameters('AzureSqlDatabase1_password')]"
+					}
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureSqlMyCabTable')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDatabase1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "VendorID",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "pickup_datetime",
+						"type": "nvarchar"
+					},
+					{
+						"name": "dropoff_datetime",
+						"type": "nvarchar"
+					},
+					{
+						"name": "RatecodeID",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "PickUp_LocationID",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "DropOffLocationID",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "passenger_count",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "trip_distance",
+						"type": "float",
+						"precision": 15
+					},
+					{
+						"name": "fare_amount",
+						"type": "float",
+						"precision": 15
+					},
+					{
+						"name": "extra",
+						"type": "float",
+						"precision": 15
+					},
+					{
+						"name": "mta_tax",
+						"type": "float",
+						"precision": 15
+					},
+					{
+						"name": "tip_amount",
+						"type": "float",
+						"precision": 15
+					},
+					{
+						"name": "tolls_amount",
+						"type": "float",
+						"precision": 15
+					},
+					{
+						"name": "improvement_surcharge",
+						"type": "float",
+						"precision": 15
+					},
+					{
+						"name": "total_amount",
+						"type": "float",
+						"precision": 15
+					},
+					{
+						"name": "payment_type",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "trip_type",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "congestion_surcharge",
+						"type": "float",
+						"precision": 15
+					}
+				],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "MyCabRides"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureSqlDatabase1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureSqlTableMyCab')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDatabase1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "VendorID",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "pickup_datetime",
+						"type": "datetime",
+						"precision": 23,
+						"scale": 3
+					},
+					{
+						"name": "dropoff_datetime",
+						"type": "datetime",
+						"precision": 23,
+						"scale": 3
+					},
+					{
+						"name": "RatecodeID",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "PickUp_LocationID",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "DropOffLocationID",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "passenger_count",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "trip_distance",
+						"type": "float",
+						"precision": 15
+					},
+					{
+						"name": "fare_amount",
+						"type": "float",
+						"precision": 15
+					},
+					{
+						"name": "extra",
+						"type": "float",
+						"precision": 15
+					},
+					{
+						"name": "mta_tax",
+						"type": "float",
+						"precision": 15
+					},
+					{
+						"name": "tip_amount",
+						"type": "float",
+						"precision": 15
+					},
+					{
+						"name": "tolls_amount",
+						"type": "float",
+						"precision": 15
+					},
+					{
+						"name": "improvement_surcharge",
+						"type": "float",
+						"precision": 15
+					},
+					{
+						"name": "total_amount",
+						"type": "float",
+						"precision": 15
+					},
+					{
+						"name": "payment_type",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "trip_type",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "congestion_surcharge",
+						"type": "float",
+						"precision": 15
+					}
+				],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "MyCabRides"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureSqlDatabase1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/MyCabCSV')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureBlobStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "mycab_data_2020-01.csv",
+						"folderPath": "input",
+						"container": "etl-assignment"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "VendorID",
+						"type": "String"
+					},
+					{
+						"name": "pickup_datetime",
+						"type": "String"
+					},
+					{
+						"name": "dropoff_datetime",
+						"type": "String"
+					},
+					{
+						"name": "RatecodeID",
+						"type": "String"
+					},
+					{
+						"name": "PickUp_LocationID",
+						"type": "String"
+					},
+					{
+						"name": "DropOffLocationID",
+						"type": "String"
+					},
+					{
+						"name": "passenger_count",
+						"type": "String"
+					},
+					{
+						"name": "trip_distance",
+						"type": "String"
+					},
+					{
+						"name": "fare_amount",
+						"type": "String"
+					},
+					{
+						"name": "extra",
+						"type": "String"
+					},
+					{
+						"name": "mta_tax",
+						"type": "String"
+					},
+					{
+						"name": "tip_amount",
+						"type": "String"
+					},
+					{
+						"name": "tolls_amount",
+						"type": "String"
+					},
+					{
+						"name": "improvement_surcharge",
+						"type": "String"
+					},
+					{
+						"name": "total_amount",
+						"type": "String"
+					},
+					{
+						"name": "payment_type",
+						"type": "String"
+					},
+					{
+						"name": "trip_type",
+						"type": "String"
+					},
+					{
+						"name": "congestion_surcharge",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureBlobStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/RankCostPerKm')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureBlobStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "rank_cost_per_km.csv",
+						"folderPath": "output",
+						"container": "etl-assignment"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "VendorID",
+						"type": "String"
+					},
+					{
+						"name": "pickup_datetime",
+						"type": "String"
+					},
+					{
+						"name": "dropoff_datetime",
+						"type": "String"
+					},
+					{
+						"name": "RatecodeID",
+						"type": "String"
+					},
+					{
+						"name": "PickUp_LocationID",
+						"type": "String"
+					},
+					{
+						"name": "DropOffLocationID",
+						"type": "String"
+					},
+					{
+						"name": "passenger_count",
+						"type": "String"
+					},
+					{
+						"name": "trip_distance",
+						"type": "String"
+					},
+					{
+						"name": "fare_amount",
+						"type": "String"
+					},
+					{
+						"name": "extra",
+						"type": "String"
+					},
+					{
+						"name": "mta_tax",
+						"type": "String"
+					},
+					{
+						"name": "tip_amount",
+						"type": "String"
+					},
+					{
+						"name": "tolls_amount",
+						"type": "String"
+					},
+					{
+						"name": "improvement_surcharge",
+						"type": "String"
+					},
+					{
+						"name": "total_amount",
+						"type": "String"
+					},
+					{
+						"name": "payment_type",
+						"type": "String"
+					},
+					{
+						"name": "trip_type",
+						"type": "String"
+					},
+					{
+						"name": "congestion_surcharge",
+						"type": "String"
+					},
+					{
+						"name": "cost_per_km",
+						"type": "String"
+					},
+					{
+						"name": "rank_cost_per_km",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureBlobStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/TipRatioPerPassenger')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureBlobStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "average_tip_ratio_per_passenger.csv",
+						"folderPath": "output",
+						"container": "etl-assignment"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "passenger_count",
+						"type": "String"
+					},
+					{
+						"name": "mean_tip_ratio",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureBlobStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/TripCountPerHour')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureBlobStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "average_trip_count_per_hour.csv",
+						"folderPath": "output",
+						"container": "etl-assignment"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "hour",
+						"type": "String"
+					},
+					{
+						"name": "mean_trip_count",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureBlobStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/TripDistancePerDay')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureBlobStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "count_trip_distance_per_day.csv",
+						"folderPath": "output",
+						"container": "etl-assignment"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "dayOfWeek",
+						"type": "String"
+					},
+					{
+						"name": "trip_distance_count",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureBlobStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/pipelineMyCab')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "CopyCSVToSQL",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [
+							{
+								"name": "Source",
+								"value": "etl-assignment/input/mycab_data_2020-01.csv"
+							},
+							{
+								"name": "Destination",
+								"value": "dbo.MyCabRides"
+							}
+						],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							},
+							"sink": {
+								"type": "AzureSqlSink",
+								"writeBehavior": "insert",
+								"sqlWriterUseTableLock": false
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"mappings": [
+									{
+										"source": {
+											"name": "VendorID",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "VendorID",
+											"type": "Int32",
+											"physicalType": "int"
+										}
+									},
+									{
+										"source": {
+											"name": "pickup_datetime",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "pickup_datetime",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "dropoff_datetime",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "dropoff_datetime",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "RatecodeID",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "RatecodeID",
+											"type": "Int32",
+											"physicalType": "int"
+										}
+									},
+									{
+										"source": {
+											"name": "PickUp_LocationID",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "PickUp_LocationID",
+											"type": "Int32",
+											"physicalType": "int"
+										}
+									},
+									{
+										"source": {
+											"name": "DropOffLocationID",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "DropOffLocationID",
+											"type": "Int32",
+											"physicalType": "int"
+										}
+									},
+									{
+										"source": {
+											"name": "passenger_count",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "passenger_count",
+											"type": "Int32",
+											"physicalType": "int"
+										}
+									},
+									{
+										"source": {
+											"name": "trip_distance",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "trip_distance",
+											"type": "Double",
+											"physicalType": "float"
+										}
+									},
+									{
+										"source": {
+											"name": "fare_amount",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "fare_amount",
+											"type": "Double",
+											"physicalType": "float"
+										}
+									},
+									{
+										"source": {
+											"name": "extra",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "extra",
+											"type": "Double",
+											"physicalType": "float"
+										}
+									},
+									{
+										"source": {
+											"name": "mta_tax",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "mta_tax",
+											"type": "Double",
+											"physicalType": "float"
+										}
+									},
+									{
+										"source": {
+											"name": "tip_amount",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "tip_amount",
+											"type": "Double",
+											"physicalType": "float"
+										}
+									},
+									{
+										"source": {
+											"name": "tolls_amount",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "tolls_amount",
+											"type": "Double",
+											"physicalType": "float"
+										}
+									},
+									{
+										"source": {
+											"name": "improvement_surcharge",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "improvement_surcharge",
+											"type": "Double",
+											"physicalType": "float"
+										}
+									},
+									{
+										"source": {
+											"name": "total_amount",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "total_amount",
+											"type": "Double",
+											"physicalType": "float"
+										}
+									},
+									{
+										"source": {
+											"name": "payment_type",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "payment_type",
+											"type": "Int32",
+											"physicalType": "int"
+										}
+									},
+									{
+										"source": {
+											"name": "trip_type",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "trip_type",
+											"type": "Int32",
+											"physicalType": "int"
+										}
+									},
+									{
+										"source": {
+											"name": "congestion_surcharge",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "congestion_surcharge",
+											"type": "Double",
+											"physicalType": "float"
+										}
+									}
+								],
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": false,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "MyCabCSV",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "AzureSqlMyCabTable",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": [],
+				"lastPublishTime": "2024-09-17T19:52:39Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/MyCabCSV')]",
+				"[concat(variables('factoryId'), '/datasets/AzureSqlMyCabTable')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/dataflow1')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "MyCabCSV",
+								"type": "DatasetReference"
+							},
+							"name": "SourceMyCab01"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "RankCostPerKm",
+								"type": "DatasetReference"
+							},
+							"name": "sink1RankCostPerKm"
+						},
+						{
+							"dataset": {
+								"referenceName": "TripCountPerHour",
+								"type": "DatasetReference"
+							},
+							"name": "sink2TripCountPerHour"
+						},
+						{
+							"dataset": {
+								"referenceName": "TripDistancePerDay",
+								"type": "DatasetReference"
+							},
+							"name": "sink3TripDistancePerDay"
+						},
+						{
+							"dataset": {
+								"referenceName": "TipRatioPerPassenger",
+								"type": "DatasetReference"
+							},
+							"name": "sink4TipRatioPerPassenger"
+						}
+					],
+					"transformations": [
+						{
+							"name": "filterInvalidData"
+						},
+						{
+							"name": "filterJan2020CabData"
+						},
+						{
+							"name": "derivedColumnTipRatio"
+						},
+						{
+							"name": "aggregateGroupByPassengerCountAvgTipRatio"
+						},
+						{
+							"name": "derivedColumnPickupDatetimeMonthDay"
+						},
+						{
+							"name": "aggregateGroupByDayOfWeekCountTripDistnace"
+						},
+						{
+							"name": "aggregateGroupByHourCountTripDistance"
+						},
+						{
+							"name": "aggregateGroupByHourMeanTripCount"
+						},
+						{
+							"name": "derivedColumnCostPerKm"
+						},
+						{
+							"name": "sortBasedOnCostPerKm"
+						},
+						{
+							"name": "rankCostPerKm"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          VendorID as integer,",
+						"          pickup_datetime as string,",
+						"          dropoff_datetime as string,",
+						"          RatecodeID as integer,",
+						"          PickUp_LocationID as integer,",
+						"          DropOffLocationID as integer,",
+						"          passenger_count as integer,",
+						"          trip_distance as float,",
+						"          fare_amount as float,",
+						"          extra as float,",
+						"          mta_tax as float,",
+						"          tip_amount as float,",
+						"          tolls_amount as float,",
+						"          improvement_surcharge as float,",
+						"          total_amount as float,",
+						"          payment_type as integer,",
+						"          trip_type as integer,",
+						"          congestion_surcharge as float",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false,",
+						"     preferredIntegralType: 'integer',",
+						"     preferredFractionalType: 'float') ~> SourceMyCab01",
+						"SourceMyCab01 filter(toFloat(fare_amount) > 0.00 && toFloat(trip_distance) > 0.00 && (isNull(toFloat(passenger_count)) == false() && toFloat(passenger_count) > 0.00)) ~> filterInvalidData",
+						"filterInvalidData filter(between (toTimestamp(pickup_datetime, 'dd-MM-yy HH:mm'), toTimestamp('01-01-20 00:00', 'dd-MM-yy HH:mm'), toTimestamp('31-01-20 23:59', 'dd-MM-yy HH:mm'))) ~> filterJan2020CabData",
+						"filterJan2020CabData derive(tip_ratio = toFloat(tip_amount) / toFloat(fare_amount)) ~> derivedColumnTipRatio",
+						"derivedColumnTipRatio aggregate(groupBy(passenger_count),",
+						"     mean_tip_ratio = avg(toFloat(tip_ratio))) ~> aggregateGroupByPassengerCountAvgTipRatio",
+						"filterJan2020CabData derive(month = month(toDate(pickup_datetime, 'dd-MM-yy')),",
+						"          day = dayOfMonth(toDate(pickup_datetime, 'dd-MM-yy')),",
+						"     partitionBy('dynamicRange', 2,",
+						"          month(toDate(pickup_datetime,'dd-MM-yy')),",
+						"          dayOfMonth(toDate(pickup_datetime,'dd-MM-yy'))",
+						"     )) ~> derivedColumnPickupDatetimeMonthDay",
+						"derivedColumnPickupDatetimeMonthDay aggregate(groupBy(dayOfWeek = dayOfWeek(toDate(pickup_datetime,'yyyy-MM-dd'))),",
+						"     trip_distance_count = count(toFloat(trip_distance))) ~> aggregateGroupByDayOfWeekCountTripDistnace",
+						"derivedColumnPickupDatetimeMonthDay aggregate(groupBy(hour = hour(toTimestamp(pickup_datetime,'yy-MM-dd HH:mm'))),",
+						"     trip_count = count(toFloat(trip_distance))) ~> aggregateGroupByHourCountTripDistance",
+						"aggregateGroupByHourCountTripDistance aggregate(groupBy(hour),",
+						"     mean_trip_count = avg(trip_count)) ~> aggregateGroupByHourMeanTripCount",
+						"filterJan2020CabData derive(cost_per_km = toFloat(fare_amount)/toFloat(trip_distance)) ~> derivedColumnCostPerKm",
+						"derivedColumnCostPerKm sort(desc(cost_per_km, true)) ~> sortBasedOnCostPerKm",
+						"sortBasedOnCostPerKm rank(desc(cost_per_km, true),",
+						"     output(rank_cost_per_km as long),",
+						"     dense: true) ~> rankCostPerKm",
+						"rankCostPerKm sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          VendorID as string,",
+						"          pickup_datetime as string,",
+						"          dropoff_datetime as string,",
+						"          RatecodeID as string,",
+						"          PickUp_LocationID as string,",
+						"          DropOffLocationID as string,",
+						"          passenger_count as string,",
+						"          trip_distance as string,",
+						"          fare_amount as string,",
+						"          extra as string,",
+						"          mta_tax as string,",
+						"          tip_amount as string,",
+						"          tolls_amount as string,",
+						"          improvement_surcharge as string,",
+						"          total_amount as string,",
+						"          payment_type as string,",
+						"          trip_type as string,",
+						"          congestion_surcharge as string,",
+						"          cost_per_km as string,",
+						"          rank_cost_per_km as string",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> sink1RankCostPerKm",
+						"aggregateGroupByHourMeanTripCount sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          hour as string,",
+						"          mean_trip_count as string",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> sink2TripCountPerHour",
+						"aggregateGroupByDayOfWeekCountTripDistnace sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          dayOfWeek as string,",
+						"          trip_distance_count as string",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> sink3TripDistancePerDay",
+						"aggregateGroupByPassengerCountAvgTipRatio sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          passenger_count as string,",
+						"          mean_tip_ratio as string",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> sink4TipRatioPerPassenger"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/MyCabCSV')]",
+				"[concat(variables('factoryId'), '/datasets/RankCostPerKm')]",
+				"[concat(variables('factoryId'), '/datasets/TripCountPerHour')]",
+				"[concat(variables('factoryId'), '/datasets/TripDistancePerDay')]",
+				"[concat(variables('factoryId'), '/datasets/TipRatioPerPassenger')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/dataflowMyCab')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "MyCabCSV",
+								"type": "DatasetReference"
+							},
+							"name": "SourceMyCab"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "AzureSqlMyCabTable",
+								"type": "DatasetReference"
+							},
+							"name": "SinkMyCab",
+							"rejectedDataLinkedService": {
+								"referenceName": "AzureBlobStorage1",
+								"type": "LinkedServiceReference"
+							}
+						}
+					],
+					"transformations": [],
+					"scriptLines": [
+						"source(output(",
+						"          VendorID as string,",
+						"          pickup_datetime as string,",
+						"          dropoff_datetime as string,",
+						"          RatecodeID as string,",
+						"          PickUp_LocationID as string,",
+						"          DropOffLocationID as string,",
+						"          passenger_count as string,",
+						"          trip_distance as string,",
+						"          fare_amount as string,",
+						"          extra as string,",
+						"          mta_tax as string,",
+						"          tip_amount as string,",
+						"          tolls_amount as string,",
+						"          improvement_surcharge as string,",
+						"          total_amount as string,",
+						"          payment_type as string,",
+						"          trip_type as string,",
+						"          congestion_surcharge as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     limit: 100,",
+						"     ignoreNoFilesFound: false,",
+						"     dateFormats: ['yyyy-MM-dd'],",
+						"     timestampFormats: ['yyyy-MM-dd\\'T\\'HH:mm:ss'],",
+						"     preferredIntegralType: 'integer',",
+						"     preferredFractionalType: 'float') ~> SourceMyCab",
+						"SourceMyCab sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          VendorID as integer,",
+						"          pickup_datetime as string,",
+						"          dropoff_datetime as string,",
+						"          RatecodeID as integer,",
+						"          PickUp_LocationID as integer,",
+						"          DropOffLocationID as integer,",
+						"          passenger_count as integer,",
+						"          trip_distance as double,",
+						"          fare_amount as double,",
+						"          extra as double,",
+						"          mta_tax as double,",
+						"          tip_amount as double,",
+						"          tolls_amount as double,",
+						"          improvement_surcharge as double,",
+						"          total_amount as double,",
+						"          payment_type as integer,",
+						"          trip_type as integer,",
+						"          congestion_surcharge as double",
+						"     ),",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError') ~> SinkMyCab"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/MyCabCSV')]",
+				"[concat(variables('factoryId'), '/datasets/AzureSqlMyCabTable')]",
+				"[concat(variables('factoryId'), '/linkedServices/AzureBlobStorage1')]"
+			]
+		}
+	]
+}
